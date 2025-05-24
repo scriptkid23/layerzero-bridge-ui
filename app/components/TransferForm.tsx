@@ -541,14 +541,14 @@ export default function TransferForm(props: TransferFormProps) {
                 '~0.0001 ETH'}
             </span>
           </div>
-          {/* <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Network fee</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-900">$23</span>
               <span className="text-xs text-green-600 font-medium">Fast</span>
               <ChevronDown className="w-3 h-3 text-gray-400" />
             </div>
-          </div> */}
+          </div>
         </div>
         {/* Transfer Button */}
         <button
