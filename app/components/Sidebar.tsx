@@ -1,5 +1,8 @@
 import React from "react";
 import { ConnectKitButton } from "connectkit";
+import { MintErc20Button } from "./MintErc20Button";
+import { chainConfig } from "../page";
+import { useAccount } from "wagmi";
 
 interface SidebarProps {
   activeTab: string;
@@ -7,14 +10,23 @@ interface SidebarProps {
   tabIndicatorRef: React.RefObject<HTMLDivElement>;
 }
 
-export default function Sidebar({ activeTab, onTabChange, tabIndicatorRef }: SidebarProps) {
+export default function Sidebar({
+  activeTab,
+  onTabChange,
+  tabIndicatorRef,
+}: SidebarProps) {
+  const { isConnected, address } = useAccount();
+  const usdtAddress = chainConfig["bscTestnet"].usdt as `0x${string}` | null;
+  React.useEffect(() => {
+    console.log("usdtAddress changed:", usdtAddress);
+  }, [usdtAddress]);
   return (
     <div className="w-64 flex-shrink-0 flex flex-col h-full">
       {/* Header with Brand */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-gray-900">1hoodlabs</h1>
-        <div className="px-3 py-1 bg-gray-100 rounded-lg">
-          <span className="text-sm font-medium text-gray-600">Bridge</span>
+        <h1 className="text-xl font-bold text-gray-900">1hood</h1>
+        <div>
+          <ConnectKitButton />
         </div>
       </div>
       {/* Tabs */}
@@ -52,8 +64,12 @@ export default function Sidebar({ activeTab, onTabChange, tabIndicatorRef }: Sid
       </div>
       {/* ConnectKitButton ở cuối sidebar */}
       <div className="mt-auto">
-        {/* <ConnectKitButton /> */}
+        <MintErc20Button
+          usdtAddress={usdtAddress}
+          isWalletConnected={isConnected}
+          address={address as `0x${string}` | undefined}
+        />
       </div>
     </div>
   );
-} 
+}

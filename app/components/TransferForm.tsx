@@ -88,22 +88,21 @@ export default function TransferForm(props: TransferFormProps) {
     sepolia: 11155111,
   };
 
-  // Auto switch chain to match fromNetwork or toNetwork when wallet is connected
+  // Auto switch chain to match fromNetwork when wallet is connected
   React.useEffect(() => {
-    if (!isConnected) return;
-    if (!fromNetwork && !toNetwork) return;
-    // Ưu tiên fromNetwork, nếu khác chainId thì switch
+    if (!isConnected || !fromNetwork) return;
     const fromChainId = chainIdMap[fromNetwork.id];
     if (fromChainId && chainId !== fromChainId) {
       switchChain({ chainId: fromChainId });
-      return;
     }
-    // Nếu fromNetwork đã đúng, kiểm tra toNetwork
-    const toChainId = chainIdMap[toNetwork.id];
-    if (toChainId && chainId !== toChainId) {
-      switchChain({ chainId: toChainId });
-    }
-  }, [fromNetwork, toNetwork, isConnected, chainId, switchChain]);
+  }, [fromNetwork, isConnected, chainId, switchChain]);
+
+  // Memoized handler for fromNetwork select (optional, for optimization)
+  const handleFromNetworkSelect = React.useCallback((network: Network) => {
+    setFromNetwork(network);
+    setFromToken(network.tokens[0]);
+    setShowFromNetworkDropdown(false);
+  }, [setFromNetwork, setFromToken, setShowFromNetworkDropdown]);
 
   const renderNetworkIcon = (network: Network) => {
     if (network.icon === "polygon") {
@@ -143,12 +142,19 @@ export default function TransferForm(props: TransferFormProps) {
     }
   };
 
-  const renderNetworkInfo = (network: Network, chainIdMap: Record<string, number>) => (
+  const renderNetworkInfo = (
+    network: Network,
+    chainIdMap: Record<string, number>
+  ) => (
     <div className="flex items-center gap-2">
       {renderNetworkIcon(network)}
       <div className="flex flex-col">
-        <span className="font-semibold text-gray-900 text-sm bg-gray-100 px-2 py-0.5 rounded-md w-fit">{network.name}</span>
-        <span className="text-xs text-gray-500">Chain ID: {chainIdMap[network.id] ?? '-'}</span>
+        <span className="font-semibold text-gray-900 text-sm bg-gray-100 px-2 py-0.5 rounded-md w-fit">
+          {network.name}
+        </span>
+        <span className="text-xs text-gray-500">
+          Chain ID: {chainIdMap[network.id] ?? "-"}
+        </span>
       </div>
     </div>
   );
@@ -168,7 +174,12 @@ export default function TransferForm(props: TransferFormProps) {
               }
             >
               <div className="flex items-center gap-3">
-                {renderNetworkInfo(fromNetwork, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
+                {renderNetworkInfo(fromNetwork, {
+                  mainnet: 1,
+                  polygon: 137,
+                  bscTestnet: 97,
+                  sepolia: 11155111,
+                })}
               </div>
               <ChevronDown
                 className={`w-5 h-5 text-gray-400 transition-transform ${
@@ -183,16 +194,14 @@ export default function TransferForm(props: TransferFormProps) {
                   <div
                     key={network.id}
                     className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors first:rounded-t-xl last:rounded-b-xl"
-                    onClick={() => {
-                      setFromNetwork(network);
-                      setFromToken(network.tokens[0]);
-                      setShowFromNetworkDropdown(false);
-                      // Switch chain ngay khi chọn
-                      const chainId = chainIdMap[network.id];
-                      if (chainId && isConnected) switchChain({ chainId });
-                    }}
+                    onClick={() => handleFromNetworkSelect(network)}
                   >
-                    {renderNetworkInfo(network, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
+                    {renderNetworkInfo(network, {
+                      mainnet: 1,
+                      polygon: 137,
+                      bscTestnet: 97,
+                      sepolia: 11155111,
+                    })}
                   </div>
                 ))}
               </div>
@@ -282,7 +291,12 @@ export default function TransferForm(props: TransferFormProps) {
               onClick={() => setShowToNetworkDropdown(!showToNetworkDropdown)}
             >
               <div className="flex items-center gap-3">
-                {renderNetworkInfo(toNetwork, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
+                {renderNetworkInfo(toNetwork, {
+                  mainnet: 1,
+                  polygon: 137,
+                  bscTestnet: 97,
+                  sepolia: 11155111,
+                })}
               </div>
               <ChevronDown
                 className={`w-5 h-5 text-gray-400 transition-transform ${
@@ -301,12 +315,14 @@ export default function TransferForm(props: TransferFormProps) {
                       setToNetwork(network);
                       setToToken(network.tokens[0]);
                       setShowToNetworkDropdown(false);
-                      // Switch chain ngay khi chọn
-                      const chainId = chainIdMap[network.id];
-                      if (chainId && isConnected) switchChain({ chainId });
                     }}
                   >
-                    {renderNetworkInfo(network, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
+                    {renderNetworkInfo(network, {
+                      mainnet: 1,
+                      polygon: 137,
+                      bscTestnet: 97,
+                      sepolia: 11155111,
+                    })}
                   </div>
                 ))}
               </div>
@@ -389,8 +405,6 @@ export default function TransferForm(props: TransferFormProps) {
           </div>
         </div>
       </div>
-      {/* Connect Wallet Button */}
-      {renderWalletButton()}
       {/* Transfer Button */}
       {isWalletConnected && (
         <button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium text-base rounded-xl transition-all duration-200 border-0 cursor-pointer">
