@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useAccount, useWalletClient } from 'wagmi';
 import { readContract } from 'wagmi/actions';
 import { usdtAbi } from '../contracts/erc20';
 import { config } from '../components/Provider';

@@ -3,7 +3,7 @@ import { X, Check, Loader2, AlertCircle } from "lucide-react";
 import { useTxModalStore } from "../store/txModalStore";
 
 export default function TransactionModal() {
-  const { isOpen, steps, close, setStepStatus, reset } = useTxModalStore();
+  const { isOpen, steps, close, reset } = useTxModalStore();
 
   const isCompleted = steps.every((step) => step.status === "completed");
   const hasError = steps.some((step) => step.status === "error");

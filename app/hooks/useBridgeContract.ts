@@ -1,7 +1,7 @@
 import { useWalletClient } from "wagmi";
 import { readContract, simulateContract, writeContract } from "wagmi/actions";
 import { config } from "../components/Provider";
-import { chainConfig } from "../page";
+import { chainConfig } from "../config/chainConfig";
 import { bridgeAbi } from "../contracts/bridge";
 import { getGasLimitLayerZero } from "../utils";
 
@@ -9,13 +9,11 @@ export function useBridgeContract() {
   const { data: walletClient } = useWalletClient();
 
   const handleTransfer = async ({
-    _payableAmount,
     amount,
     to,
     destinationChain,
     sourceChain,
   }: {
-    _payableAmount: bigint;
     amount: bigint;
     to: `0x${string}`;
     destinationChain: string;

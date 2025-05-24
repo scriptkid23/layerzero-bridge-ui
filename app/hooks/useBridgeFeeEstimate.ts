@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useBridgeContract } from './useBridgeContract';
+import { useState, useEffect } from "react";
+import { useBridgeContract } from "./useBridgeContract";
 
 export function useBridgeFeeEstimate({
   amount,
@@ -28,20 +28,35 @@ export function useBridgeFeeEstimate({
     let cancelled = false;
     setLoading(true);
     setError(null);
-    calculateNativeFees(amount, to as `0x${string}`, destinationChain, sourceChain)
-      .then((result: any) => {
-        if (cancelled) return;
-        if (result && result.nativeFee !== undefined) {
-          setNativeFee(result.nativeFee);
-          setLzTokenFee(result.lzTokenFee ?? null);
-        } else {
-          setNativeFee(null);
-          setLzTokenFee(null);
+    calculateNativeFees(
+      amount,
+      to as `0x${string}`,
+      destinationChain,
+      sourceChain
+    )
+      .then(
+        (
+          result: { nativeFee: bigint; lzTokenFee: bigint | null } | undefined
+        ) => {
+          if (cancelled) return;
+
+          if (result && result.nativeFee !== undefined) {
+            setNativeFee(result.nativeFee);
+
+            setLzTokenFee(result.lzTokenFee ?? null);
+          } else {
+            setNativeFee(null);
+            setLzTokenFee(null);
+          }
         }
-      })
-      .catch((err) => {
+      )
+      //@ts-nocheck
+      .catch((err: unknown) => {
+        console.error(err);
         if (cancelled) return;
-        setError(err.message || 'Failed to estimate bridge fee');
+        setError(
+          err instanceof Error ? err.message : "Failed to estimate bridge fee"
+        );
         setNativeFee(null);
         setLzTokenFee(null);
       })
@@ -55,4 +70,4 @@ export function useBridgeFeeEstimate({
   }, [amount, to, sourceChain, destinationChain]);
 
   return { nativeFee, lzTokenFee, loading, error };
-} 
+}

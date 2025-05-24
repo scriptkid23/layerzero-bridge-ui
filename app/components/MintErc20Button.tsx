@@ -34,9 +34,12 @@ export const MintErc20Button: React.FC<MintErc20ButtonProps> = ({
         hash: tx,
       });
       setMintStatus("success");
-    } catch (e: any) {
+    } catch (e: unknown) {
+      console.error(e);
       setMintStatus("error");
-      setMintError(e?.message || "Mint failed");
+      setMintError((err: unknown) =>
+        err instanceof Error ? err.message : String(err)
+      );
     }
   };
 

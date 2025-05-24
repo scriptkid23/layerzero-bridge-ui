@@ -1,7 +1,7 @@
 import React from "react";
 import { ConnectKitButton } from "connectkit";
 import { MintErc20Button } from "./MintErc20Button";
-import { chainConfig } from "../page";
+import { chainConfig } from "../config/chainConfig";
 import { useAccount } from "wagmi";
 
 interface SidebarProps {

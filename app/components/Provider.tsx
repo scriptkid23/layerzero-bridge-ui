@@ -1,5 +1,5 @@
 "use client";
-import { ConnectKitProvider, getDefaultConfig } from "connectkit";
+import { ConnectKitProvider } from "connectkit";
 import { createConfig, http, WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { bscTestnet, mainnet, polygon, sepolia } from "wagmi/chains";

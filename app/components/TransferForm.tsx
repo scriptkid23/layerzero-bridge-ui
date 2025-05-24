@@ -1,11 +1,11 @@
 import React from "react";
-import { ChevronDown, ArrowUpDown, RotateCcw, Plus } from "lucide-react";
+import { ChevronDown, ArrowUpDown, RotateCcw } from "lucide-react";
 import { useSwitchChain, useAccount } from "wagmi";
 import { useErc20Balance } from '../hooks/useErc20Balance';
 import { useBridgeStore } from '../store/bridgeStore';
 import { defaultBridgeAmountCalculator } from '../utils/bridgeAmountCalculator';
 import { useBridgeContract } from '../hooks/useBridgeContract';
-import { parseEther, parseUnits, formatEther } from 'viem';
+import { parseUnits, formatEther } from 'viem';
 import TransactionModal from './TransactionModal';
 import { useTxModalStore } from '../store/txModalStore';
 import { readContract, writeContract, waitForTransactionReceipt } from 'wagmi/actions';
@@ -84,7 +84,6 @@ export default function TransferForm(props: TransferFormProps) {
     setShowFromTokenDropdown,
     setShowToTokenDropdown,
     handleSwap,
-    renderWalletButton,
     isWalletConnected,
     chainConfig,
   } = props;
@@ -94,22 +93,16 @@ export default function TransferForm(props: TransferFormProps) {
   const {
     sourceChain,
     destChain,
-    fromToken: bridgeFromToken,
-    toToken: bridgeToToken,
-    fromAmount: bridgeFromAmount,
-    toAmount: bridgeToAmount,
-    setFromAmount: setBridgeFromAmount,
-    setToAmount: setBridgeToAmount,
   } = useBridgeStore();
   const { handleTransfer } = useBridgeContract();
 
   // chainIdMap for supported chains (move this above all dropdown handlers)
-  const chainIdMap: Record<string, number> = {
+  const chainIdMap: Record<string, number> = React.useMemo(() => ({
     mainnet: 1,
     polygon: 137,
     bscTestnet: 97,
     sepolia: 11155111,
-  };
+  }), []);
 
   // Auto switch chain to match fromNetwork when wallet is connected
   React.useEffect(() => {
@@ -118,7 +111,7 @@ export default function TransferForm(props: TransferFormProps) {
     if (fromChainId && chainId !== fromChainId) {
       switchChain({ chainId: fromChainId });
     }
-  }, [fromNetwork, isConnected, chainId, switchChain]);
+  }, [fromNetwork, isConnected, chainId, switchChain, chainIdMap]);
 
   // Memoized handler for fromNetwork select (optional, for optimization)
   const handleFromNetworkSelect = React.useCallback((network: Network) => {
@@ -227,8 +220,6 @@ export default function TransferForm(props: TransferFormProps) {
       e.target.value,
       fromToken,
       toToken,
-      sourceChain,
-      destChain
     );
     setToAmount(calculated);
   };
@@ -277,7 +268,6 @@ export default function TransferForm(props: TransferFormProps) {
       txModal.setStepStatus(2, 'in-progress');
       const toAddress = recipientAddress.trim() || userAddress;
       const bridgeTx = await handleTransfer({
-        _payableAmount: parseEther('0.001'),
         amount,
         to: toAddress as `0x${string}`,
         destinationChain: destChain,
@@ -288,9 +278,9 @@ export default function TransferForm(props: TransferFormProps) {
       await waitForTransactionReceipt(config, { hash: bridgeTx });
       txModal.setStepStatus(2, 'completed');
       txModal.setStepStatus(3, 'completed');
-    } catch (err: any) {
-      if (txModal.steps[0].status === 'in-progress') txModal.setStepStatus(1, 'error', err.message);
-      else if (txModal.steps[1].status === 'in-progress') txModal.setStepStatus(2, 'error', err.message);
+    } catch (err: unknown) {
+      if (txModal.steps[0].status === 'in-progress') txModal.setStepStatus(1, 'error', err instanceof Error ? err.message : String(err));
+      else if (txModal.steps[1].status === 'in-progress') txModal.setStepStatus(2, 'error', err instanceof Error ? err.message : String(err));
     }
   };
 

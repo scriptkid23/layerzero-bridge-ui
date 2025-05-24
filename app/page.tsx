@@ -1,13 +1,5 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import Image from "next/image";
-import {
-  ChevronDown,
-  ArrowDown,
-  ArrowUpDown,
-  Plus,
-  Wallet,
-} from "lucide-react";
 import { gsap } from "gsap";
 import Sidebar from "./components/Sidebar";
 import WalletButton from "./components/WalletButton";
@@ -16,6 +8,7 @@ import AddTokenForm from "./components/AddTokenForm";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { useBridgeStore } from "./store/bridgeStore";
 import { defaultBridgeAmountCalculator } from "./utils/bridgeAmountCalculator";
+import { chainConfig } from "./config/chainConfig";
 
 interface Network {
   id: string;
@@ -23,12 +16,6 @@ interface Network {
   icon: string;
   color: string;
   tokens: string[];
-}
-
-interface Token {
-  symbol: string;
-  name: string;
-  icon: string;
 }
 
 const networks: Network[] = [
@@ -78,25 +65,6 @@ const tokenIcons: { [key: string]: string } = {
   GMX: "⚡",
 };
 
-// Chain contract config
-export const chainConfig: Record<
-  string,
-  { usdt: string | null; bridge: string | null; _dstEid: number | null }
-> = {
-  mainnet: { usdt: null, bridge: null, _dstEid: null },
-  polygon: { usdt: null, bridge: null, _dstEid: null },
-  bscTestnet: {
-    usdt: "0x340Ab63e032C9354fD8d18f97833A1aB75AC1Ff7",
-    bridge: "0xe71a0009716752E1d32eaE3089F4152bc5F1ebA6",
-    _dstEid: 40102,
-  },
-  sepolia: {
-    usdt: "0x2B6069650B78b10fab9D54c9A6B6AD84b045a1CA",
-    bridge: "0x212Fbda4a5B034700E1C6422880b13C9f41180FB",
-    _dstEid: 40161,
-  },
-};
-
 export default function Home() {
   const [activeTab, setActiveTab] = useState("transfer");
   // zustand store
@@ -124,7 +92,7 @@ export default function Home() {
     const to = networks.find((n) => n.id === destChain);
     if (from) setFromNetwork(from);
     if (to) setToNetwork(to);
-  }, []);
+  }, [sourceChain, destChain]);
 
   // Dropdown states
   const [showFromNetworkDropdown, setShowFromNetworkDropdown] = useState(false);
@@ -232,7 +200,7 @@ export default function Home() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [fromNetworkRef, toNetworkRef, fromTokenRef, toTokenRef]);
 
   // Initialize tab indicator position
   useEffect(() => {
@@ -249,7 +217,7 @@ export default function Home() {
         });
       }
     }
-  }, []);
+  }, [activeTab, tabIndicatorRef]);
 
   // Khi chọn fromNetwork, cập nhật sourceChain trong store
   const handleSetFromNetwork = (network: Network) => {
@@ -277,8 +245,6 @@ export default function Home() {
       amount,
       fromToken,
       toToken,
-      sourceChain,
-      destChain
     );
     setToAmount(calculated);
   };
