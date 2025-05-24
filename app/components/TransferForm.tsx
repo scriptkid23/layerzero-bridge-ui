@@ -5,6 +5,7 @@ import { useErc20Balance } from '../hooks/useErc20Balance';
 import { useBridgeStore } from '../store/bridgeStore';
 import { defaultBridgeAmountCalculator } from '../utils/bridgeAmountCalculator';
 import { useBridgeContract } from '../hooks/useBridgeContract';
+import { parseEther } from 'viem';
 
 interface Network {
   id: string;
@@ -212,7 +213,7 @@ export default function TransferForm(props: TransferFormProps) {
     // Chuyển đổi amount sang bigint (giả sử 6 decimals cho USDT)
     const amount = BigInt(Math.floor(Number(fromAmount) * 1e6));
     await handleTransfer({
-      _payableAmount: BigInt("0.001"), // TODO: tính phí native nếu cần
+      _payableAmount: parseEther('0.001'), // 0.001 ETH (wei)
       amount,
       to: address as `0x${string}`,
       destinationChain: destChain,

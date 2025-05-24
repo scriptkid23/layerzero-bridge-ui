@@ -14,8 +14,8 @@ import WalletButton from "./components/WalletButton";
 import TransferForm from "./components/TransferForm";
 import AddTokenForm from "./components/AddTokenForm";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { useBridgeStore } from './store/bridgeStore';
-import { defaultBridgeAmountCalculator } from './utils/bridgeAmountCalculator';
+import { useBridgeStore } from "./store/bridgeStore";
+import { defaultBridgeAmountCalculator } from "./utils/bridgeAmountCalculator";
 
 interface Network {
   id: string;
@@ -79,7 +79,10 @@ const tokenIcons: { [key: string]: string } = {
 };
 
 // Chain contract config
-export const chainConfig: Record<string, { usdt: string | null; bridge: string | null; _dstEid: number | null }> = {
+export const chainConfig: Record<
+  string,
+  { usdt: string | null; bridge: string | null; _dstEid: number | null }
+> = {
   mainnet: { usdt: null, bridge: null, _dstEid: null },
   polygon: { usdt: null, bridge: null, _dstEid: null },
   bscTestnet: {
@@ -115,6 +118,13 @@ export default function Home() {
   // Network and token states (for dropdowns only)
   const [fromNetwork, setFromNetwork] = useState(networks[0]);
   const [toNetwork, setToNetwork] = useState(networks[1]);
+
+  React.useEffect(() => {
+    const from = networks.find((n) => n.id === sourceChain);
+    const to = networks.find((n) => n.id === destChain);
+    if (from) setFromNetwork(from);
+    if (to) setToNetwork(to);
+  }, []);
 
   // Dropdown states
   const [showFromNetworkDropdown, setShowFromNetworkDropdown] = useState(false);
