@@ -14,6 +14,8 @@ import WalletButton from "./components/WalletButton";
 import TransferForm from "./components/TransferForm";
 import AddTokenForm from "./components/AddTokenForm";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useBridgeStore } from './store/bridgeStore';
+import { defaultBridgeAmountCalculator } from './utils/bridgeAmountCalculator';
 
 interface Network {
   id: string;
@@ -94,14 +96,25 @@ export const chainConfig: Record<string, { usdt: string | null; bridge: string |
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("transfer");
-  const [fromAmount, setFromAmount] = useState("0");
-  const [toAmount, setToAmount] = useState("0");
+  // zustand store
+  const {
+    sourceChain,
+    destChain,
+    fromToken,
+    toToken,
+    fromAmount,
+    toAmount,
+    setSourceChain,
+    setDestChain,
+    setFromToken,
+    setToToken,
+    setFromAmount,
+    setToAmount,
+  } = useBridgeStore();
 
-  // Network and token states
+  // Network and token states (for dropdowns only)
   const [fromNetwork, setFromNetwork] = useState(networks[0]);
   const [toNetwork, setToNetwork] = useState(networks[1]);
-  const [fromToken, setFromToken] = useState("BUSD");
-  const [toToken, setToToken] = useState("ETH");
 
   // Dropdown states
   const [showFromNetworkDropdown, setShowFromNetworkDropdown] = useState(false);
@@ -228,19 +241,54 @@ export default function Home() {
     }
   }, []);
 
-  // Swap function
+  // Khi chọn fromNetwork, cập nhật sourceChain trong store
+  const handleSetFromNetwork = (network: Network) => {
+    setFromNetwork(network);
+    setSourceChain(network.id);
+    setFromToken(network.tokens[0]);
+  };
+  // Khi chọn toNetwork, cập nhật destChain trong store
+  const handleSetToNetwork = (network: Network) => {
+    setToNetwork(network);
+    setDestChain(network.id);
+    setToToken(network.tokens[0]);
+  };
+  // Khi chọn fromToken/toToken
+  const handleSetFromToken = (token: string) => {
+    setFromToken(token);
+  };
+  const handleSetToToken = (token: string) => {
+    setToToken(token);
+  };
+  // Khi nhập fromAmount, tự động tính toAmount
+  const handleSetFromAmount = (amount: string) => {
+    setFromAmount(amount);
+    const calculated = defaultBridgeAmountCalculator(
+      amount,
+      fromToken,
+      toToken,
+      sourceChain,
+      destChain
+    );
+    setToAmount(calculated);
+  };
+  // Khi nhập toAmount (nếu cho phép chỉnh tay)
+  const handleSetToAmount = (amount: string) => {
+    setToAmount(amount);
+  };
+
+  // Swap function cập nhật cả store và local state
   const handleSwap = () => {
     const tempNetwork = fromNetwork;
     setFromNetwork(toNetwork);
     setToNetwork(tempNetwork);
-
+    setSourceChain(toNetwork.id);
+    setDestChain(fromNetwork.id);
     const tempToken = fromToken;
     setFromToken(toToken);
     setToToken(tempToken);
-
-    const tempAmount = fromAmount;
     setFromAmount(toAmount);
-    setToAmount(tempAmount);
+    setToAmount(fromAmount);
   };
 
   // Wallet button render
@@ -283,12 +331,12 @@ export default function Home() {
                 toTokenRef={toTokenRef}
                 networks={networks}
                 tokenIcons={tokenIcons}
-                setFromAmount={setFromAmount}
-                setToAmount={setToAmount}
-                setFromNetwork={setFromNetwork}
-                setToNetwork={setToNetwork}
-                setFromToken={setFromToken}
-                setToToken={setToToken}
+                setFromAmount={handleSetFromAmount}
+                setToAmount={handleSetToAmount}
+                setFromNetwork={handleSetFromNetwork}
+                setToNetwork={handleSetToNetwork}
+                setFromToken={handleSetFromToken}
+                setToToken={handleSetToToken}
                 setShowFromNetworkDropdown={setShowFromNetworkDropdown}
                 setShowToNetworkDropdown={setShowToNetworkDropdown}
                 setShowFromTokenDropdown={setShowFromTokenDropdown}

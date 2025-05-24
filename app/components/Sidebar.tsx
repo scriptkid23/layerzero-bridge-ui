@@ -15,8 +15,14 @@ export default function Sidebar({
   onTabChange,
   tabIndicatorRef,
 }: SidebarProps) {
-  const { isConnected, address } = useAccount();
-  const usdtAddress = chainConfig["bscTestnet"].usdt as `0x${string}` | null;
+  const { isConnected, address, chainId } = useAccount();
+  const chainIdToKey: Record<number, string> = {
+    1: "mainnet",
+    137: "polygon",
+    97: "bscTestnet",
+    11155111: "sepolia",
+  };
+  const usdtAddress = chainConfig[chainIdToKey[chainId ?? 0]]?.usdt as `0x${string}` | null;
   React.useEffect(() => {
     console.log("usdtAddress changed:", usdtAddress);
   }, [usdtAddress]);

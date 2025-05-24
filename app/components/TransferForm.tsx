@@ -1,6 +1,10 @@
 import React from "react";
-import { ChevronDown, ArrowUpDown } from "lucide-react";
+import { ChevronDown, ArrowUpDown, RotateCcw } from "lucide-react";
 import { useSwitchChain, useAccount } from "wagmi";
+import { useErc20Balance } from '../hooks/useErc20Balance';
+import { useBridgeStore } from '../store/bridgeStore';
+import { defaultBridgeAmountCalculator } from '../utils/bridgeAmountCalculator';
+import { useBridgeContract } from '../hooks/useBridgeContract';
 
 interface Network {
   id: string;
@@ -79,6 +83,17 @@ export default function TransferForm(props: TransferFormProps) {
 
   const { isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
+  const {
+    sourceChain,
+    destChain,
+    fromToken: bridgeFromToken,
+    toToken: bridgeToToken,
+    fromAmount: bridgeFromAmount,
+    toAmount: bridgeToAmount,
+    setFromAmount: setBridgeFromAmount,
+    setToAmount: setBridgeToAmount,
+  } = useBridgeStore();
+  const { handleTransfer } = useBridgeContract();
 
   // chainIdMap for supported chains (move this above all dropdown handlers)
   const chainIdMap: Record<string, number> = {
@@ -103,6 +118,20 @@ export default function TransferForm(props: TransferFormProps) {
     setFromToken(network.tokens[0]);
     setShowFromNetworkDropdown(false);
   }, [setFromNetwork, setFromToken, setShowFromNetworkDropdown]);
+
+  // Lấy address token hiện tại (fromToken) trên chain fromNetwork
+  const tokenAddressMap = React.useMemo(() => {
+    const map: Record<string, string | null> = {};
+    // Chỉ map USDT, có thể mở rộng cho các token khác nếu cần
+    if (chainConfig[fromNetwork.id]?.usdt) {
+      map['USDT'] = chainConfig[fromNetwork.id]?.usdt;
+    }
+    // Có thể mở rộng cho các token khác ở đây
+    return map;
+  }, [fromNetwork, chainConfig]);
+  const fromTokenAddress = tokenAddressMap[fromToken] as `0x${string}` | null;
+  const { address } = useAccount();
+  const { balance: fromTokenBalance, loading: loadingBalance, refreshBalance } = useErc20Balance(fromTokenAddress, address as `0x${string}` | undefined);
 
   const renderNetworkIcon = (network: Network) => {
     if (network.icon === "polygon") {
@@ -158,6 +187,38 @@ export default function TransferForm(props: TransferFormProps) {
       </div>
     </div>
   );
+
+  // Khi nhập fromAmount, tự động tính toAmount
+  const handleFromAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFromAmount(e.target.value);
+    const calculated = defaultBridgeAmountCalculator(
+      e.target.value,
+      fromToken,
+      toToken,
+      sourceChain,
+      destChain
+    );
+    setToAmount(calculated);
+  };
+
+  // Khi nhập toAmount (nếu cho phép chỉnh tay)
+  const handleToAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setToAmount(e.target.value);
+  };
+
+  // Hàm gọi bridge khi bấm Transfer
+  const onTransfer = async () => {
+    if (!address) return;
+    // Chuyển đổi amount sang bigint (giả sử 6 decimals cho USDT)
+    const amount = BigInt(Math.floor(Number(fromAmount) * 1e6));
+    await handleTransfer({
+      _payableAmount: BigInt("0.001"), // TODO: tính phí native nếu cần
+      amount,
+      to: address as `0x${string}`,
+      destinationChain: destChain,
+      sourceChain: sourceChain,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -253,7 +314,7 @@ export default function TransferForm(props: TransferFormProps) {
               <input
                 type="text"
                 value={fromAmount}
-                onChange={(e) => setFromAmount(e.target.value)}
+                onChange={handleFromAmountChange}
                 className="text-2xl font-semibold text-gray-900 bg-transparent border-0 outline-none text-right w-full"
                 placeholder="0"
               />
@@ -261,7 +322,12 @@ export default function TransferForm(props: TransferFormProps) {
           </div>
           {/* Wallet Balance */}
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-500">In wallet: 20.13 MAT</span>
+            <span className="text-gray-500 flex items-center gap-1">
+              In wallet: {loadingBalance ? '...' : fromTokenBalance !== null ? `${Number(fromTokenBalance) / 1e6} ${fromToken}` : '0'}
+              <button onClick={refreshBalance} disabled={loadingBalance} className="ml-1 p-1 rounded hover:bg-gray-200 transition-colors" title="Refresh balance">
+                <RotateCcw className={`w-4 h-4 ${loadingBalance ? 'animate-spin' : ''}`} />
+              </button>
+            </span>
             <div className="flex items-center gap-2">
               <button className="h-6 px-2 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 bg-transparent border-0 rounded cursor-pointer transition-colors">
                 MAX
@@ -372,7 +438,7 @@ export default function TransferForm(props: TransferFormProps) {
               <input
                 type="text"
                 value={toAmount}
-                onChange={(e) => setToAmount(e.target.value)}
+                onChange={handleToAmountChange}
                 className="text-2xl font-semibold text-gray-900 bg-transparent border-0 outline-none text-right w-full"
                 placeholder="0"
               />
@@ -407,7 +473,10 @@ export default function TransferForm(props: TransferFormProps) {
       </div>
       {/* Transfer Button */}
       {isWalletConnected && (
-        <button className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium text-base rounded-xl transition-all duration-200 border-0 cursor-pointer">
+        <button
+          className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium text-base rounded-xl transition-all duration-200 border-0 cursor-pointer"
+          onClick={onTransfer}
+        >
           Transfer
         </button>
       )}

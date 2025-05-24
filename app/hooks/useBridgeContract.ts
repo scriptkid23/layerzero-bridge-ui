@@ -10,23 +10,24 @@ export function useBridgeContract() {
 
   const handleTransfer = async ({
     _payableAmount,
-    _dstEid,
-    token,
     amount,
     to,
-    chain,
+    destinationChain,
+    sourceChain,
   }: {
     _payableAmount: bigint;
-    _dstEid: number;
-    token: `0x${string}`;
     amount: bigint;
     to: `0x${string}`;
-    chain: string;
+    destinationChain: string;
+    sourceChain: string;
   }) => {
     if (!walletClient) return;
 
-    const bridgeAddress = chainConfig[chain].bridge;
-    if (!bridgeAddress) return;
+    const bridgeAddress = chainConfig[sourceChain].bridge;
+    const tokenAddress = chainConfig[sourceChain].usdt;
+    const _dstEid = chainConfig[destinationChain]._dstEid;
+
+    if (!bridgeAddress || !_dstEid) return;
 
     try {
       const options = await getGasLimitLayerZero(); 
@@ -34,7 +35,7 @@ export function useBridgeContract() {
         abi: bridgeAbi,
         address: bridgeAddress as `0x${string}`,
         functionName: "bridge",
-        args: [_dstEid, token, amount, to, options as `0x${string}`],
+        args: [_dstEid, tokenAddress as `0x${string}`, amount, to, options as `0x${string}`],
         value: _payableAmount,
         account: walletClient.account,
       });
