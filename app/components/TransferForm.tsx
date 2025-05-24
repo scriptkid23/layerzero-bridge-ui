@@ -78,17 +78,18 @@ export default function TransferForm(props: TransferFormProps) {
   const { isConnected, chainId } = useAccount();
   const { switchChain } = useSwitchChain();
 
+  // chainIdMap for supported chains (move this above all dropdown handlers)
+  const chainIdMap: Record<string, number> = {
+    mainnet: 1,
+    polygon: 137,
+    bscTestnet: 97,
+    sepolia: 11155111,
+  };
+
   // Auto switch chain to match fromNetwork or toNetwork when wallet is connected
   React.useEffect(() => {
     if (!isConnected) return;
     if (!fromNetwork && !toNetwork) return;
-    // Map network id to wagmi chain id
-    const chainIdMap: Record<string, number> = {
-      mainnet: 1,
-      polygon: 137,
-      bscTestnet: 97,
-      sepolia: 11155111,
-    };
     // Ưu tiên fromNetwork, nếu khác chainId thì switch
     const fromChainId = chainIdMap[fromNetwork.id];
     if (fromChainId && chainId !== fromChainId) {
@@ -184,6 +185,9 @@ export default function TransferForm(props: TransferFormProps) {
                       setFromNetwork(network);
                       setFromToken(network.tokens[0]);
                       setShowFromNetworkDropdown(false);
+                      // Switch chain ngay khi chọn
+                      const chainId = chainIdMap[network.id];
+                      if (chainId && isConnected) switchChain({ chainId });
                     }}
                   >
                     {renderNetworkInfo(network, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
@@ -295,6 +299,9 @@ export default function TransferForm(props: TransferFormProps) {
                       setToNetwork(network);
                       setToToken(network.tokens[0]);
                       setShowToNetworkDropdown(false);
+                      // Switch chain ngay khi chọn
+                      const chainId = chainIdMap[network.id];
+                      if (chainId && isConnected) switchChain({ chainId });
                     }}
                   >
                     {renderNetworkInfo(network, { mainnet: 1, polygon: 137, bscTestnet: 97, sepolia: 11155111 })}
