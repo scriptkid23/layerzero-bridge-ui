@@ -40,6 +40,7 @@ interface TransferFormProps {
   handleSwap: () => void;
   renderWalletButton: () => React.ReactNode;
   isWalletConnected: boolean;
+  chainConfig: Record<string, { usdt: string | null; bridge: string | null }>;
 }
 
 export default function TransferForm(props: TransferFormProps) {
@@ -73,6 +74,7 @@ export default function TransferForm(props: TransferFormProps) {
     handleSwap,
     renderWalletButton,
     isWalletConnected,
+    chainConfig,
   } = props;
 
   const { isConnected, chainId } = useAccount();

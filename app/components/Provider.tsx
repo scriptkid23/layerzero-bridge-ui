@@ -4,7 +4,7 @@ import { createConfig, http, WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { bscTestnet, mainnet, polygon, sepolia } from "wagmi/chains";
 
-const config = createConfig({
+export const config = createConfig({
   chains: [mainnet, polygon, bscTestnet, sepolia],
   transports: {
     [mainnet.id]: http(),
