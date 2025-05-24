@@ -12,6 +12,7 @@ import { readContract, writeContract, waitForTransactionReceipt } from 'wagmi/ac
 import { usdtAbi } from '../contracts/erc20';
 import { config } from '../components/Provider';
 import { useBridgeFeeEstimate } from '../hooks/useBridgeFeeEstimate';
+import { useNetworkFeeEstimate, GasPriceType } from '../hooks/useNetworkFeeEstimate';
 
 interface Network {
   id: string;
@@ -150,6 +151,18 @@ export default function TransferForm(props: TransferFormProps) {
     to: recipientAddress.trim() || (address as string || ''),
     sourceChain,
     destinationChain: destChain,
+  });
+
+  // State cho gas price option
+  const [gasPriceType, setGasPriceType] = React.useState<GasPriceType>('fast');
+  // Tính toán phí mạng động
+  const { networkFee, loading: loadingNetworkFee, error: errorNetworkFee } = useNetworkFeeEstimate({
+    from: address as string as `0x${string}`,
+    to: (recipientAddress.trim() || address) as string as `0x${string}`,
+    amount: amountBigInt,
+    sourceChain,
+    destinationChain: destChain,
+    gasPriceType,
   });
 
   const renderNetworkIcon = (network: Network) => {
@@ -544,9 +557,21 @@ export default function TransferForm(props: TransferFormProps) {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-600">Network fee</span>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900">$23</span>
-              <span className="text-xs text-green-600 font-medium">Fast</span>
-              <ChevronDown className="w-3 h-3 text-gray-400" />
+              <span className="text-sm font-medium text-gray-900">
+                {loadingNetworkFee ? 'Estimating...' :
+                  errorNetworkFee ? '~0.002 ETH' :
+                  networkFee !== null ? `${formatEther(networkFee)} ETH` :
+                  '~0.002 ETH'}
+              </span>
+              <select
+                className="ml-2 px-2 py-1 rounded bg-gray-100 border border-gray-300 text-xs text-gray-700 font-medium focus:outline-none"
+                value={gasPriceType}
+                onChange={e => setGasPriceType(e.target.value as GasPriceType)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="fast">Fast</option>
+              </select>
             </div>
           </div>
         </div>
