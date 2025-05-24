@@ -1,5 +1,5 @@
 import { useWalletClient } from "wagmi";
-import { simulateContract, writeContract } from "wagmi/actions";
+import { readContract, simulateContract, writeContract } from "wagmi/actions";
 import { config } from "../components/Provider";
 import { chainConfig } from "../page";
 import { bridgeAbi } from "../contracts/bridge";
@@ -27,16 +27,30 @@ export function useBridgeContract() {
     const tokenAddress = chainConfig[sourceChain].usdt;
     const _dstEid = chainConfig[destinationChain]._dstEid;
 
+    
+
     if (!bridgeAddress || !_dstEid) return;
+
+   
 
     try {
       const options = await getGasLimitLayerZero(); 
+
+      const nativeFees = await readContract(config, {
+        abi: bridgeAbi,
+        address: bridgeAddress as `0x${string}`,
+        functionName: "estimateFees",
+        args: [_dstEid, tokenAddress as `0x${string}`, amount, to, options as `0x${string}`, false],
+      });
+
+      
+
       const simulation = await simulateContract(config, {
         abi: bridgeAbi,
         address: bridgeAddress as `0x${string}`,
         functionName: "bridge",
         args: [_dstEid, tokenAddress as `0x${string}`, amount, to, options as `0x${string}`],
-        value: _payableAmount,
+        value: nativeFees.nativeFee,
         account: walletClient.account,
       });
 
@@ -52,5 +66,24 @@ export function useBridgeContract() {
     }
   };
 
-  return { handleTransfer };
+  const calculateNativeFees = async (amount: bigint, to: `0x${string}`, destinationChain: string, sourceChain: string) => {
+    const bridgeAddress = chainConfig[sourceChain].bridge;
+    const tokenAddress = chainConfig[sourceChain].usdt;
+    const _dstEid = chainConfig[destinationChain]._dstEid;
+
+    if (!bridgeAddress || !_dstEid) return;
+
+    const options = await getGasLimitLayerZero(); 
+
+    const nativeFees = await readContract(config, {
+      abi: bridgeAbi,
+      address: bridgeAddress as `0x${string}`,
+      functionName: "estimateFees",
+      args: [_dstEid, tokenAddress as `0x${string}`, amount, to, options as `0x${string}`, false],
+    });
+
+    return nativeFees;
+  }
+
+  return { handleTransfer, calculateNativeFees };
 }
