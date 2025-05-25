@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { gsap } from "gsap";
 import Sidebar from "./components/Sidebar";
 import WalletButton from "./components/WalletButton";
@@ -64,6 +64,18 @@ const tokenIcons: { [key: string]: string } = {
   ARB: "��",
   GMX: "⚡",
 };
+
+// WalletButtonComponent tách riêng để tránh tạo function inline
+const WalletButtonComponent = React.memo(function WalletButtonComponent({ isWalletConnected, walletAddress, onConnect, onDisconnect }: { isWalletConnected: boolean, walletAddress: string, onConnect: () => void, onDisconnect: () => void }) {
+  return (
+    <WalletButton
+      isWalletConnected={isWalletConnected}
+      walletAddress={walletAddress}
+      onConnect={onConnect}
+      onDisconnect={onDisconnect}
+    />
+  );
+});
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("transfer");
@@ -219,27 +231,32 @@ export default function Home() {
     }
   }, [activeTab, tabIndicatorRef]);
 
-  // Khi chọn fromNetwork, cập nhật sourceChain trong store
-  const handleSetFromNetwork = (network: Network) => {
+  // Memo hóa networks và tokenIcons
+  const memoNetworks = useMemo(() => networks, []);
+  const memoTokenIcons = useMemo(() => tokenIcons, []);
+
+  // Handler bọc useCallback
+  const handleSetFromNetwork = useCallback((network: Network) => {
     setFromNetwork(network);
     setSourceChain(network.id);
     setFromToken(network.tokens[0]);
-  };
-  // Khi chọn toNetwork, cập nhật destChain trong store
-  const handleSetToNetwork = (network: Network) => {
+  }, [setFromNetwork, setSourceChain, setFromToken]);
+
+  const handleSetToNetwork = useCallback((network: Network) => {
     setToNetwork(network);
     setDestChain(network.id);
     setToToken(network.tokens[0]);
-  };
-  // Khi chọn fromToken/toToken
-  const handleSetFromToken = (token: string) => {
+  }, [setToNetwork, setDestChain, setToToken]);
+
+  const handleSetFromToken = useCallback((token: string) => {
     setFromToken(token);
-  };
-  const handleSetToToken = (token: string) => {
+  }, [setFromToken]);
+
+  const handleSetToToken = useCallback((token: string) => {
     setToToken(token);
-  };
-  // Khi nhập fromAmount, tự động tính toAmount
-  const handleSetFromAmount = (amount: string) => {
+  }, [setToToken]);
+
+  const handleSetFromAmount = useCallback((amount: string) => {
     setFromAmount(amount);
     const calculated = defaultBridgeAmountCalculator(
       amount,
@@ -247,14 +264,13 @@ export default function Home() {
       toToken,
     );
     setToAmount(calculated);
-  };
-  // Khi nhập toAmount (nếu cho phép chỉnh tay)
-  const handleSetToAmount = (amount: string) => {
-    setToAmount(amount);
-  };
+  }, [setFromAmount, setToAmount, fromToken, toToken]);
 
-  // Swap function cập nhật cả store và local state
-  const handleSwap = () => {
+  const handleSetToAmount = useCallback((amount: string) => {
+    setToAmount(amount);
+  }, [setToAmount]);
+
+  const handleSwap = useCallback(() => {
     const tempNetwork = fromNetwork;
     setFromNetwork(toNetwork);
     setToNetwork(tempNetwork);
@@ -265,17 +281,17 @@ export default function Home() {
     setToToken(tempToken);
     setFromAmount(toAmount);
     setToAmount(fromAmount);
-  };
+  }, [fromNetwork, toNetwork, fromToken, toToken, fromAmount, toAmount, setFromNetwork, setToNetwork, setSourceChain, setDestChain, setFromToken, setToToken, setFromAmount, setToAmount]);
 
-  // Wallet button render
-  const renderWalletButton = () => (
-    <WalletButton
+  // Wallet button render (dùng component memoized)
+  const walletButtonNode = useMemo(() => (
+    <WalletButtonComponent
       isWalletConnected={isConnected}
       walletAddress={address ?? ""}
       onConnect={() => connect({ connector: connectors[0] })}
       onDisconnect={() => disconnect()}
     />
-  );
+  ), [isConnected, address, connect, connectors, disconnect]);
 
   return (
     <div className="max-w-6xl mx-auto p-4 flex gap-6">
@@ -305,8 +321,8 @@ export default function Home() {
                 toNetworkRef={toNetworkRef}
                 fromTokenRef={fromTokenRef}
                 toTokenRef={toTokenRef}
-                networks={networks}
-                tokenIcons={tokenIcons}
+                networks={memoNetworks}
+                tokenIcons={memoTokenIcons}
                 setFromAmount={handleSetFromAmount}
                 setToAmount={handleSetToAmount}
                 setFromNetwork={handleSetFromNetwork}
@@ -318,7 +334,7 @@ export default function Home() {
                 setShowFromTokenDropdown={setShowFromTokenDropdown}
                 setShowToTokenDropdown={setShowToTokenDropdown}
                 handleSwap={handleSwap}
-                renderWalletButton={renderWalletButton}
+                renderWalletButton={() => walletButtonNode}
                 isWalletConnected={isConnected}
                 chainConfig={chainConfig}
               />
@@ -335,7 +351,7 @@ export default function Home() {
                 setLiquidityToken={setLiquidityToken}
                 setLiquidityAmount={setLiquidityAmount}
                 isWalletConnected={isConnected}
-                renderWalletButton={renderWalletButton}
+                renderWalletButton={() => walletButtonNode}
               />
             )}
           </div>

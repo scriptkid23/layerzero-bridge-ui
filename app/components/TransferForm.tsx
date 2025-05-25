@@ -55,7 +55,7 @@ interface TransferFormProps {
   chainConfig: Record<string, { usdt: string | null; bridge: string | null }>;
 }
 
-export default function TransferForm(props: TransferFormProps) {
+const TransferForm = (props: TransferFormProps) => {
   const {
     fromAmount,
     toAmount,
@@ -88,8 +88,8 @@ export default function TransferForm(props: TransferFormProps) {
     chainConfig,
   } = props;
 
-  const { isConnected, chainId } = useAccount();
-  const { switchChain } = useSwitchChain();
+  const { isConnected, chainId, connector } = useAccount();
+  const { switchChain, isPending } = useSwitchChain();
   const {
     sourceChain,
     destChain,
@@ -106,12 +106,20 @@ export default function TransferForm(props: TransferFormProps) {
 
   // Auto switch chain to match fromNetwork when wallet is connected
   React.useEffect(() => {
-    if (!isConnected || !fromNetwork) return;
+    if (
+      !isConnected ||
+      !fromNetwork ||
+      !connector?.switchChain // connector must support switchChain
+    ) return;
     const fromChainId = chainIdMap[fromNetwork.id];
-    if (fromChainId && chainId !== fromChainId) {
+    if (
+      fromChainId &&
+      chainId !== fromChainId &&
+      !isPending // avoid calling repeatedly while pending
+    ) {
       switchChain({ chainId: fromChainId });
     }
-  }, [fromNetwork, isConnected, chainId, switchChain, chainIdMap]);
+  }, [fromNetwork, isConnected, chainId, switchChain, chainIdMap, connector, isPending]);
 
   // Memoized handler for fromNetwork select (optional, for optimization)
   const handleFromNetworkSelect = React.useCallback((network: Network) => {
@@ -576,4 +584,6 @@ export default function TransferForm(props: TransferFormProps) {
       </div>
     </>
   );
-}
+};
+
+export default React.memo(TransferForm);

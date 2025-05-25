@@ -10,11 +10,11 @@ interface SidebarProps {
   tabIndicatorRef: React.RefObject<HTMLDivElement>;
 }
 
-export default function Sidebar({
+const Sidebar = ({
   activeTab,
   onTabChange,
   tabIndicatorRef,
-}: SidebarProps) {
+}: SidebarProps) => {
   const { isConnected, address, chainId } = useAccount();
   const chainIdToKey: Record<number, string> = {
     1: "mainnet",
@@ -78,4 +78,6 @@ export default function Sidebar({
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(Sidebar);

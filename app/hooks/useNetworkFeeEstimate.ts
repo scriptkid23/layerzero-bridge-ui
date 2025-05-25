@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { estimateGas, getGasPrice } from "wagmi/actions";
 import { config } from "../components/Provider";
-import { bridgeAbi } from "../contracts/bridge";
 import { chainConfig } from "../config/chainConfig";
-import { encodeFunctionData } from "viem";
 
 export type GasPriceType = "low" | "medium" | "fast";
 
@@ -38,7 +36,6 @@ export function useNetworkFeeEstimate({
     (async () => {
       try {
         const bridgeAddress = chainConfig[sourceChain]?.bridge as `0x${string}`;
-        const tokenAddress = chainConfig[sourceChain]?.usdt as `0x${string}`;
         const _dstEid = chainConfig[destinationChain]?._dstEid;
         if (!bridgeAddress || !_dstEid)
           throw new Error("Missing bridge config");
@@ -46,11 +43,6 @@ export function useNetworkFeeEstimate({
         const gas = await estimateGas(config, {
           account: from,
           to: bridgeAddress,
-          data: encodeFunctionData({
-            abi: bridgeAbi,
-            functionName: "bridge",
-            args: [_dstEid, tokenAddress, amount, to, "0x"],
-          }),
         });
         // Get gas price
         let gasPrice = await getGasPrice(config);

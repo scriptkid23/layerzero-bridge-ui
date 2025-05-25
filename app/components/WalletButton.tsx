@@ -8,7 +8,7 @@ interface WalletButtonProps {
   onDisconnect: () => void;
 }
 
-export default function WalletButton({ isWalletConnected, walletAddress, onConnect, onDisconnect }: WalletButtonProps) {
+const WalletButton = ({ isWalletConnected, walletAddress, onConnect, onDisconnect }: WalletButtonProps) => {
   if (isWalletConnected) {
     return (
       <button
@@ -29,4 +29,6 @@ export default function WalletButton({ isWalletConnected, walletAddress, onConne
       Connect Wallet
     </button>
   );
-}
+};
+
+export default React.memo(WalletButton);
